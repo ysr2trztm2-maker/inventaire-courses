@@ -790,6 +790,7 @@ let mobChecked    = {}; // itemId → bool
 let mobTakeQty    = {}; // itemId → quantity to take
 let mobAllToBuy   = []; // full list before store filter
 let mobActiveStore = 'tous'; // current store filter
+let mobCollapsed  = {}; // cat → bool
 
 const MOB_CHECKED_KEY  = 'mob_checked';
 const MOB_QTY_KEY      = 'mob_qty';
@@ -875,6 +876,11 @@ function renderMobList() {
   });
 
   body.innerHTML = Object.entries(grouped).sort(([a],[b]) => a.localeCompare(b)).map(([cat, catItems]) => {
+    const collapsed = !!mobCollapsed[cat];
+    const doneInCat = catItems.filter(i => mobChecked[i.id]).length;
+    const allDone   = doneInCat === catItems.length;
+    const catKey    = cat.replace(/[^a-zA-Z0-9]/g, '_');
+
     const itemsHtml = catItems.map(item => {
       const checked = mobChecked[item.id] || false;
       const storesBadges = (item.stores && item.stores.length)
@@ -895,14 +901,31 @@ function renderMobList() {
         + '</div>'
         + '</div>';
     }).join('');
-    return '<div style="padding:8px 16px 2px;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#757575;background:#f5f5f5;">'
-      + (CATEGORY_ICONS[cat] || '📦') + ' ' + cat
+
+    const badge = allDone
+      ? '<span style="margin-left:auto;font-size:.75rem;color:#2e7d32;font-weight:700;">✅ Fait</span>'
+      : (doneInCat > 0 ? '<span style="margin-left:auto;font-size:.75rem;color:#f57c00;font-weight:600;">' + doneInCat + '/' + catItems.length + '</span>' : '<span style="margin-left:auto;font-size:.75rem;color:#bbb;">' + catItems.length + '</span>');
+
+    return '<div onclick="mobToggleCat(\'' + catKey + '\')" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:' + (allDone ? '#2e7d32' : '#555') + ';background:' + (allDone ? '#f1f8e9' : '#f0f0f0') + ';border-bottom:1px solid #ddd;cursor:pointer;user-select:none;">'
+      + '<span>' + (CATEGORY_ICONS[cat] || '📦') + ' ' + cat + '</span>'
+      + badge
+      + '<span style="font-size:.9rem;color:#aaa;margin-left:4px;">' + (collapsed ? '▶' : '▼') + '</span>'
       + '</div>'
-      + itemsHtml;
+      + '<div id="mobcat-' + catKey + '" style="' + (collapsed ? 'display:none;' : '') + '">'
+      + itemsHtml
+      + '</div>';
   }).join('');
 
   const done = filtered.filter(i => mobChecked[i.id]).length;
   updateMobProgress(filtered.length, done);
+}
+
+function mobToggleCat(catKey) {
+  mobCollapsed[catKey] = !mobCollapsed[catKey];
+  const el = document.getElementById('mobcat-' + catKey);
+  if (el) el.style.display = mobCollapsed[catKey] ? 'none' : '';
+  // Re-render just the header arrow/badge — easier to re-render full list
+  renderMobList();
 }
 
 function mobAdjustQty(itemId, delta) {
