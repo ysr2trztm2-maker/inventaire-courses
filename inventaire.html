@@ -328,6 +328,7 @@
     <div class="subtitle">Mis à jour chaque lundi</div>
   </div>
   <div class="header-actions">
+    <span id="sync-status" onclick="openSyncSettings()" title="Synchronisation" style="cursor:pointer;color:#fff;font-size:.8rem;padding:8px 10px;opacity:.7;align-self:center;"></span>
     <button class="btn btn-primary" onclick="openModal()">+ Ajouter</button>
     <button class="btn" style="background:#fff3e0;color:#e65100;font-weight:700;" onclick="openMobile()">📱 Courses</button>
   </div>
@@ -429,6 +430,27 @@
 
 <div id="toast"></div>
 
+<!-- Sync settings modal -->
+<div class="overlay" id="sync-overlay" onclick="if(event.target===this)closeSyncSettings()">
+  <div class="modal">
+    <h3>☁️ Synchronisation Gist</h3>
+    <div class="form-row">
+      <label>GitHub Personal Access Token</label>
+      <input type="password" id="s-token" placeholder="ghp_..." />
+    </div>
+    <div class="form-row">
+      <label>ID du Gist</label>
+      <input type="text" id="s-gist-id" placeholder="635e2de1a64be26f7c039..." />
+    </div>
+    <p style="font-size:.78rem;color:#757575;margin-top:-6px;">Le token et l'ID sont stockés uniquement sur cet appareil.</p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" style="margin-right:auto;" onclick="syncFromGist()">🔄 Synchroniser</button>
+      <button class="btn btn-ghost" onclick="closeSyncSettings()">Annuler</button>
+      <button class="btn btn-accent" onclick="saveSyncSettings()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── Data ──────────────────────────────────────────────────────────────────
 const STORE_KEY = 'inventaire_v3';
@@ -451,26 +473,98 @@ const CATEGORY_ICONS = {
   'Autre':                 '📦',
 };
 
-function load() {
-  // Try v2 first, then migrate v1
-  try {
-    const raw = localStorage.getItem(STORE_KEY);
-    if (raw) { items = JSON.parse(raw); return; }
-    const old = localStorage.getItem('inventaire_v1');
-    if (old) {
-      items = JSON.parse(old).map(i => ({
-        ...i,
-        stores: i.store ? [i.store] : [],
-        store: undefined,
-      }));
-      save();
-      return;
-    }
-  } catch {}
-  items = getDefaults();
+// ── Gist sync ─────────────────────────────────────────────────────────────
+const GIST_FILE  = 'inventaire.json';
+function gistToken() { return localStorage.getItem('gist_token') || ''; }
+function gistId()    { return localStorage.getItem('gist_id')    || ''; }
+
+function syncStatus(state) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  const map = { syncing: '🔄', ok: '☁️ Sync', error: '⚠️ Sync' };
+  el.textContent = map[state] || '';
+  el.style.opacity = state === 'ok' ? '.7' : '1';
 }
 
-function save() { localStorage.setItem(STORE_KEY, JSON.stringify(items)); }
+async function gistSave(data) {
+  if (!gistToken() || !gistId()) return;
+  syncStatus('syncing');
+  try {
+    await fetch(`https://api.github.com/gists/${gistId()}`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `token ${gistToken()}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files: { [GIST_FILE]: { content: JSON.stringify(data) } } }),
+    });
+    syncStatus('ok');
+  } catch { syncStatus('error'); }
+}
+
+async function gistLoad() {
+  if (!gistToken() || !gistId()) return null;
+  try {
+    const r = await fetch(`https://api.github.com/gists/${gistId()}`, {
+      headers: { 'Authorization': `token ${gistToken()}` }
+    });
+    const json = await r.json();
+    const content = json.files?.[GIST_FILE]?.content;
+    if (content) {
+      const data = JSON.parse(content);
+      if (Array.isArray(data) && data.length > 0) return data;
+    }
+  } catch {}
+  return null;
+}
+
+function openSyncSettings() {
+  document.getElementById('s-token').value = gistToken();
+  document.getElementById('s-gist-id').value = gistId();
+  document.getElementById('sync-overlay').classList.add('open');
+}
+function closeSyncSettings() {
+  document.getElementById('sync-overlay').classList.remove('open');
+}
+function saveSyncSettings() {
+  const t = document.getElementById('s-token').value.trim();
+  const g = document.getElementById('s-gist-id').value.trim();
+  localStorage.setItem('gist_token', t);
+  localStorage.setItem('gist_id', g);
+  closeSyncSettings();
+  syncFromGist();
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) { items = JSON.parse(raw); }
+    else {
+      const old = localStorage.getItem('inventaire_v1');
+      if (old) {
+        items = JSON.parse(old).map(i => ({ ...i, stores: i.store ? [i.store] : [], store: undefined }));
+      } else {
+        items = getDefaults();
+      }
+    }
+  } catch { items = getDefaults(); }
+}
+
+function save() {
+  localStorage.setItem(STORE_KEY, JSON.stringify(items));
+  gistSave(items);
+}
+
+async function syncFromGist() {
+  syncStatus('syncing');
+  const data = await gistLoad();
+  if (data) {
+    items = data;
+    localStorage.setItem(STORE_KEY, JSON.stringify(items));
+    render();
+    syncStatus('ok');
+    toast('☁️ Synchronisé');
+  } else {
+    syncStatus('ok');
+  }
+}
 
 function getStatus(item) {
   if (item.qty <= 0) return 'low';
@@ -1036,6 +1130,7 @@ document.addEventListener('keydown', e => {
 // ── Init ──────────────────────────────────────────────────────────────────
 load();
 render();
+syncFromGist();
 </script>
 </body>
 </html>
