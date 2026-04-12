@@ -163,6 +163,10 @@
     .icon-btn:hover { background: var(--border); }
 
     /* ── Store badges ── */
+    .item-stores {
+      display: flex; flex-wrap: nowrap; gap: 4px; margin-top: 4px;
+      overflow: hidden; max-width: 100%;
+    }
     .store-badge {
       font-size: .68rem; font-weight: 600; padding: 2px 7px; border-radius: 20px;
       background: #e3f2fd; color: #1565c0; white-space: nowrap;
@@ -656,8 +660,8 @@ function itemCard(item) {
         <div class="item-meta">
           ${item.unit ? `<span>${item.unit}</span><span>·</span>` : ''}
           <span>Min: ${item.min}</span>
-          ${storeTags ? `<span>·</span>${storeTags}` : ''}
         </div>
+        ${storeTags ? `<div class="item-stores">${storeTags}</div>` : ''}
       </div>
       <div class="qty-control">
         <button class="qty-btn" onclick="changeQty('${item.id}',-1)">−</button>
