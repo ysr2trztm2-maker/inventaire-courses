@@ -715,17 +715,36 @@ let mobTakeQty    = {}; // itemId → quantity to take
 let mobAllToBuy   = []; // full list before store filter
 let mobActiveStore = 'tous'; // current store filter
 
+const MOB_CHECKED_KEY  = 'mob_checked';
+const MOB_QTY_KEY      = 'mob_qty';
+
+function mobSaveState() {
+  localStorage.setItem(MOB_CHECKED_KEY, JSON.stringify(mobChecked));
+  localStorage.setItem(MOB_QTY_KEY,     JSON.stringify(mobTakeQty));
+}
+function mobLoadState() {
+  try { mobChecked = JSON.parse(localStorage.getItem(MOB_CHECKED_KEY)) || {}; } catch { mobChecked = {}; }
+  try { mobTakeQty = JSON.parse(localStorage.getItem(MOB_QTY_KEY))     || {}; } catch { mobTakeQty = {}; }
+}
+function mobClearState() {
+  mobChecked = {}; mobTakeQty = {};
+  localStorage.removeItem(MOB_CHECKED_KEY);
+  localStorage.removeItem(MOB_QTY_KEY);
+}
+
 function openMobile() {
   mobAllToBuy = items.filter(i => getStatus(i) !== 'ok')
     .sort((a,b) => a.cat.localeCompare(b.cat) || a.name.localeCompare(b.name));
 
-  mobChecked     = {};
-  mobTakeQty     = {};
   mobActiveStore = 'tous';
 
-  // Init take quantities for all items
+  // Restore saved state (coches + quantités)
+  mobLoadState();
+
+  // Init take quantities seulement pour les nouveaux articles
   mobAllToBuy.forEach(item => {
-    mobTakeQty[item.id] = Math.max(1, item.min - item.qty);
+    if (mobTakeQty[item.id] === undefined)
+      mobTakeQty[item.id] = Math.max(1, item.min - item.qty);
   });
 
   // Build store chips — only stores that have items to buy
@@ -804,6 +823,7 @@ function mobAdjustQty(itemId, delta) {
   mobTakeQty[itemId] = next;
   const el = document.getElementById('mobqty-' + itemId);
   if (el) el.textContent = next;
+  mobSaveState();
 }
 
 function mobToggle(itemId) {
@@ -817,6 +837,7 @@ function mobToggle(itemId) {
   }
 
   // Ne pas toucher au stock ici — seulement à la validation finale
+  mobSaveState();
 
   // Refresh progress for current filter
   const filtered = mobActiveStore === 'tous'
@@ -846,6 +867,7 @@ function validateMobile() {
     if (item) item.qty = item.qty + (mobTakeQty[id] || 1);
   });
   save();
+  mobClearState();
   document.getElementById('mobile-overlay').classList.remove('open');
   document.documentElement.style.overflow = '';
   render();
