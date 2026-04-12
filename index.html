@@ -678,32 +678,20 @@ function openMobile() {
     return;
   }
 
-  // Group by store
-  const byStore = {};
-  toBuy.forEach(item => {
-    const keys = (item.stores && item.stores.length) ? item.stores : ['—'];
-    keys.forEach(s => { if (!byStore[s]) byStore[s] = []; byStore[s].push(item); });
-  });
-
-  const storeOrder = Object.keys(byStore).sort((a,b) =>
-    a==='—' ? 1 : b==='—' ? -1 : a.localeCompare(b));
-
-  body.innerHTML = storeOrder.map(store => {
-    const header = '<div class="mob-store-header">🏪 ' + store + '</div>';
-    const rows = byStore[store].map(item => {
-      const need = Math.max(1, item.min - item.qty);
-      const sub  = [item.unit, item.cat].filter(Boolean).join(' · ');
-      const sid  = store.replace(/\W/g,'_');
-      return '<div class="mob-item" data-id="' + item.id + '" onclick="mobToggle(\'' + item.id + '\')">'
-        + '<div class="mob-check-area"><div class="mob-checkbox" id="mobchk-' + item.id + '-' + sid + '"></div></div>'
-        + '<div class="mob-item-label">'
-        + '<div class="mob-item-name">' + item.name + '</div>'
-        + (sub ? '<div class="mob-item-sub">' + sub + '</div>' : '')
-        + '</div>'
-        + '<div class="mob-item-qty">×' + need + '</div>'
-        + '</div>';
-    }).join('');
-    return header + rows;
+  body.innerHTML = toBuy.map(item => {
+    const need   = Math.max(1, item.min - item.qty);
+    const sub    = [item.unit, item.cat].filter(Boolean).join(' · ');
+    const storesBadges = (item.stores && item.stores.length)
+      ? item.stores.map(s => '<span style="background:#e3f2fd;color:#1565c0;border-radius:20px;padding:2px 8px;font-size:.75rem;font-weight:600;margin-right:4px;">🏪 ' + s + '</span>').join('')
+      : '';
+    return '<div class="mob-item" data-id="' + item.id + '" onclick="mobToggle(\'' + item.id + '\')">'
+      + '<div class="mob-check-area"><div class="mob-checkbox" id="mobchk-' + item.id + '"></div></div>'
+      + '<div class="mob-item-label">'
+      + '<div class="mob-item-name">' + item.name + '</div>'
+      + '<div class="mob-item-sub">' + (sub ? sub + (storesBadges ? ' &nbsp;' : '') : '') + storesBadges + '</div>'
+      + '</div>'
+      + '<div class="mob-item-qty">×' + need + '</div>'
+      + '</div>';
   }).join('');
 
   updateMobProgress(toBuy.length, 0);
