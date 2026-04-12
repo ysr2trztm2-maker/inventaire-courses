@@ -867,26 +867,38 @@ function renderMobList() {
     return;
   }
 
-  body.innerHTML = filtered.map(item => {
-    const checked = mobChecked[item.id] || false;
-    const sub = [item.unit, item.cat].filter(Boolean).join(' · ');
-    const storesBadges = (item.stores && item.stores.length)
-      ? item.stores.map(s => '<span style="background:#e3f2fd;color:#1565c0;border-radius:20px;padding:2px 8px;font-size:.72rem;font-weight:600;margin-right:3px;">🏪 ' + s + '</span>').join('')
-      : '';
-    return '<div class="mob-item' + (checked ? ' checked' : '') + '" id="mobrow-' + item.id + '" data-id="' + item.id + '">'
-      + '<div class="mob-check-area" onclick="mobToggle(\'' + item.id + '\')">'
-      +   '<div class="mob-checkbox" id="mobchk-' + item.id + '">' + (checked ? '✓' : '') + '</div>'
+  // Group by category
+  const grouped = {};
+  filtered.forEach(item => {
+    if (!grouped[item.cat]) grouped[item.cat] = [];
+    grouped[item.cat].push(item);
+  });
+
+  body.innerHTML = Object.entries(grouped).sort(([a],[b]) => a.localeCompare(b)).map(([cat, catItems]) => {
+    const itemsHtml = catItems.map(item => {
+      const checked = mobChecked[item.id] || false;
+      const storesBadges = (item.stores && item.stores.length)
+        ? item.stores.map(s => '<span style="background:#e3f2fd;color:#1565c0;border-radius:20px;padding:2px 8px;font-size:.72rem;font-weight:600;margin-right:3px;">🏪 ' + s + '</span>').join('')
+        : '';
+      return '<div class="mob-item' + (checked ? ' checked' : '') + '" id="mobrow-' + item.id + '" data-id="' + item.id + '">'
+        + '<div class="mob-check-area" onclick="mobToggle(\'' + item.id + '\')">'
+        +   '<div class="mob-checkbox" id="mobchk-' + item.id + '">' + (checked ? '✓' : '') + '</div>'
+        + '</div>'
+        + '<div class="mob-item-label" onclick="mobToggle(\'' + item.id + '\')">'
+        +   '<div class="mob-item-name">' + item.name + '</div>'
+        +   (storesBadges && mobActiveStore === 'tous' ? '<div class="mob-item-sub">' + storesBadges + '</div>' : '')
+        + '</div>'
+        + '<div class="mob-qty-ctrl">'
+        +   '<button class="mob-qty-btn" onclick="mobAdjustQty(\'' + item.id + '\',-1)">−</button>'
+        +   '<span class="mob-qty-num" id="mobqty-' + item.id + '">' + (mobTakeQty[item.id] || 1) + '</span>'
+        +   '<button class="mob-qty-btn" onclick="mobAdjustQty(\'' + item.id + '\',1)">+</button>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+    return '<div style="padding:8px 16px 2px;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#757575;background:#f5f5f5;">'
+      + (CATEGORY_ICONS[cat] || '📦') + ' ' + cat
       + '</div>'
-      + '<div class="mob-item-label" onclick="mobToggle(\'' + item.id + '\')">'
-      +   '<div class="mob-item-name">' + item.name + '</div>'
-      +   '<div class="mob-item-sub">' + (sub || '') + (storesBadges && mobActiveStore === 'tous' ? (sub ? ' &nbsp;' : '') + storesBadges : '') + '</div>'
-      + '</div>'
-      + '<div class="mob-qty-ctrl">'
-      +   '<button class="mob-qty-btn" onclick="mobAdjustQty(\'' + item.id + '\',-1)">−</button>'
-      +   '<span class="mob-qty-num" id="mobqty-' + item.id + '">' + (mobTakeQty[item.id] || 1) + '</span>'
-      +   '<button class="mob-qty-btn" onclick="mobAdjustQty(\'' + item.id + '\',1)">+</button>'
-      + '</div>'
-      + '</div>';
+      + itemsHtml;
   }).join('');
 
   const done = filtered.filter(i => mobChecked[i.id]).length;
