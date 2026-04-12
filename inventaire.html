@@ -255,15 +255,27 @@
       font-size: 1.1rem; transition: .15s; flex-shrink: 0;
     }
     .mob-item.checked .mob-checkbox { background: var(--primary); border-color: var(--primary); color: #fff; }
-    .mob-item-label { flex: 1; padding: 14px 8px 14px 0; cursor: pointer; }
+    .mob-item-label { flex: 1; padding: 12px 8px 12px 0; }
     .mob-item-name { font-size: 1.05rem; font-weight: 600; color: var(--text); }
     .mob-item.checked .mob-item-name { text-decoration: line-through; color: #aaa; }
-    .mob-item-sub { font-size: .8rem; color: var(--muted); margin-top: 2px; }
-    .mob-item-qty {
-      font-size: 1rem; font-weight: 700; color: var(--accent);
-      padding: 14px 16px 14px 8px; white-space: nowrap;
+    .mob-item-sub { font-size: .78rem; color: var(--muted); margin-top: 3px; }
+    /* Qty adjuster */
+    .mob-qty-ctrl {
+      display: flex; align-items: center; gap: 0;
+      padding: 0 12px 0 4px; flex-shrink: 0;
     }
-    .mob-item.checked .mob-item-qty { color: #bbb; }
+    .mob-qty-btn {
+      width: 36px; height: 44px; border: none; background: none;
+      font-size: 1.4rem; font-weight: 300; color: var(--primary);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .mob-qty-btn:active { background: #e8f5e9; border-radius: 8px; }
+    .mob-qty-num {
+      font-size: 1.1rem; font-weight: 700; color: var(--accent);
+      min-width: 28px; text-align: center;
+    }
+    .mob-item.checked .mob-qty-num { color: #bbb; }
     .mob-done-banner {
       display: none; text-align: center; padding: 40px 24px;
       font-size: 1.2rem; font-weight: 700; color: var(--primary);
@@ -660,7 +672,8 @@ function saveItem() {
 
 
 // ── Mode courses iPhone ───────────────────────────────────────────────────
-let mobChecked = {}; // itemId → bool
+let mobChecked  = {}; // itemId → bool
+let mobTakeQty  = {}; // itemId → quantity to take
 
 function openMobile() {
   const toBuy = items.filter(i => getStatus(i) !== 'ok')
@@ -678,19 +691,29 @@ function openMobile() {
     return;
   }
 
+  // Init take quantities
+  toBuy.forEach(item => {
+    mobTakeQty[item.id] = Math.max(1, item.min - item.qty);
+  });
+
   body.innerHTML = toBuy.map(item => {
-    const need   = Math.max(1, item.min - item.qty);
-    const sub    = [item.unit, item.cat].filter(Boolean).join(' · ');
+    const sub = [item.unit, item.cat].filter(Boolean).join(' · ');
     const storesBadges = (item.stores && item.stores.length)
-      ? item.stores.map(s => '<span style="background:#e3f2fd;color:#1565c0;border-radius:20px;padding:2px 8px;font-size:.75rem;font-weight:600;margin-right:4px;">🏪 ' + s + '</span>').join('')
+      ? item.stores.map(s => '<span style="background:#e3f2fd;color:#1565c0;border-radius:20px;padding:2px 8px;font-size:.72rem;font-weight:600;margin-right:3px;">🏪 ' + s + '</span>').join('')
       : '';
-    return '<div class="mob-item" data-id="' + item.id + '" onclick="mobToggle(\'' + item.id + '\')">'
-      + '<div class="mob-check-area"><div class="mob-checkbox" id="mobchk-' + item.id + '"></div></div>'
-      + '<div class="mob-item-label">'
-      + '<div class="mob-item-name">' + item.name + '</div>'
-      + '<div class="mob-item-sub">' + (sub ? sub + (storesBadges ? ' &nbsp;' : '') : '') + storesBadges + '</div>'
+    return '<div class="mob-item" id="mobrow-' + item.id + '" data-id="' + item.id + '">'
+      + '<div class="mob-check-area" onclick="mobToggle(\'' + item.id + '\')">'
+      +   '<div class="mob-checkbox" id="mobchk-' + item.id + '"></div>'
       + '</div>'
-      + '<div class="mob-item-qty">×' + need + '</div>'
+      + '<div class="mob-item-label" onclick="mobToggle(\'' + item.id + '\')">'
+      +   '<div class="mob-item-name">' + item.name + '</div>'
+      +   '<div class="mob-item-sub">' + (sub || '') + (storesBadges ? (sub ? ' &nbsp;' : '') + storesBadges : '') + '</div>'
+      + '</div>'
+      + '<div class="mob-qty-ctrl">'
+      +   '<button class="mob-qty-btn" onclick="mobAdjustQty(\'' + item.id + '\',-1)">−</button>'
+      +   '<span class="mob-qty-num" id="mobqty-' + item.id + '">' + mobTakeQty[item.id] + '</span>'
+      +   '<button class="mob-qty-btn" onclick="mobAdjustQty(\'' + item.id + '\',1)">+</button>'
+      + '</div>'
       + '</div>';
   }).join('');
 
@@ -699,32 +722,33 @@ function openMobile() {
   document.documentElement.style.overflow = 'hidden';
 }
 
+function mobAdjustQty(itemId, delta) {
+  const current = mobTakeQty[itemId] || 1;
+  const next = Math.max(1, current + delta);
+  mobTakeQty[itemId] = next;
+  const el = document.getElementById('mobqty-' + itemId);
+  if (el) el.textContent = next;
+}
+
 function mobToggle(itemId) {
   mobChecked[itemId] = !mobChecked[itemId];
   const checked = mobChecked[itemId];
 
-  // Update all rows for this item (may appear in multiple stores)
-  document.querySelectorAll(`[data-id="${itemId}"]`).forEach(row => {
+  const row = document.getElementById('mobrow-' + itemId);
+  if (row) {
     row.classList.toggle('checked', checked);
     row.querySelector('.mob-checkbox').textContent = checked ? '✓' : '';
-  });
-
-  // Also update inventory qty
-  if (checked) {
-    const item = items.find(i => i.id === itemId);
-    if (item) { item.qty = item.min * 2; save(); }
-  } else {
-    // uncheck: restore qty to 0 so it stays on list
-    const item = items.find(i => i.id === itemId);
-    if (item) { item.qty = 0; save(); }
   }
 
-  const total   = document.querySelectorAll('#mob-body [data-id]').length;
-  const unique  = [...new Set(
-    [...document.querySelectorAll('#mob-body [data-id]')].map(el => el.dataset.id)
-  )].length;
+  const item = items.find(i => i.id === itemId);
+  if (item) {
+    item.qty = checked ? item.qty + (mobTakeQty[itemId] || 1) : Math.max(0, item.qty - (mobTakeQty[itemId] || 1));
+    save();
+  }
+
+  const total    = document.querySelectorAll('#mob-body [data-id]').length;
   const doneUniq = Object.values(mobChecked).filter(Boolean).length;
-  updateMobProgress(unique, doneUniq);
+  updateMobProgress(total, doneUniq);
 }
 
 function updateMobProgress(total, done = 0) {
