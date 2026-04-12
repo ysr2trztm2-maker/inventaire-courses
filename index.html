@@ -227,13 +227,30 @@
       background: rgba(255,255,255,.2); border: none; color: #fff;
       border-radius: 8px; padding: 8px 14px; font-size: .9rem; font-weight: 700; cursor: pointer;
     }
+    /* Store filter bar */
+    .mob-store-bar {
+      background: #fff; border-bottom: 1px solid var(--border);
+      padding: 10px 12px; display: flex; gap: 8px; overflow-x: auto;
+      flex-shrink: 0; -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .mob-store-bar::-webkit-scrollbar { display: none; }
+    .mob-store-chip {
+      border: 2px solid var(--border); border-radius: 20px;
+      padding: 6px 14px; font-size: .85rem; font-weight: 600;
+      white-space: nowrap; cursor: pointer; background: #fff; color: var(--muted);
+      -webkit-tap-highlight-color: transparent; transition: .15s;
+    }
+    .mob-store-chip.active {
+      background: #1565c0; border-color: #1565c0; color: #fff;
+    }
     .mob-progress {
-      background: #fff; padding: 10px 16px; border-bottom: 1px solid var(--border);
-      font-size: .85rem; color: var(--muted); display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+      background: #fff; padding: 8px 16px; border-bottom: 1px solid var(--border);
+      font-size: .83rem; color: var(--muted); display: flex; align-items: center; gap: 10px; flex-shrink: 0;
     }
     .mob-progress-bar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
     .mob-progress-fill { height: 100%; background: var(--primary); border-radius: 3px; transition: width .3s; }
-    .mob-body { flex: 1; overflow-y: auto; padding: 8px 0 32px; -webkit-overflow-scrolling: touch; }
+    .mob-body { flex: 1; overflow-y: auto; padding: 8px 0 32px; -webkit-overflow-scrolling: touch; min-height: 0; }
     .mob-store-header {
       background: #1565c0; color: #fff; padding: 10px 16px;
       font-size: .85rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
@@ -382,6 +399,7 @@
     <h2>🛒 Courses du lundi</h2>
     <button class="mob-close" onclick="closeMobile()">✕ Fermer</button>
   </div>
+  <div class="mob-store-bar" id="mob-store-bar"></div>
   <div class="mob-progress">
     <span id="mob-progress-text">0 / 0</span>
     <div class="mob-progress-bar"><div class="mob-progress-fill" id="mob-progress-fill" style="width:0%"></div></div>
@@ -672,54 +690,92 @@ function saveItem() {
 
 
 // ── Mode courses iPhone ───────────────────────────────────────────────────
-let mobChecked  = {}; // itemId → bool
-let mobTakeQty  = {}; // itemId → quantity to take
+let mobChecked    = {}; // itemId → bool
+let mobTakeQty    = {}; // itemId → quantity to take
+let mobAllToBuy   = []; // full list before store filter
+let mobActiveStore = 'tous'; // current store filter
 
 function openMobile() {
-  const toBuy = items.filter(i => getStatus(i) !== 'ok')
+  mobAllToBuy = items.filter(i => getStatus(i) !== 'ok')
     .sort((a,b) => a.cat.localeCompare(b.cat) || a.name.localeCompare(b.name));
 
-  mobChecked = {};
+  mobChecked     = {};
+  mobTakeQty     = {};
+  mobActiveStore = 'tous';
 
-  const body = document.getElementById('mob-body');
-
-  if (toBuy.length === 0) {
-    body.innerHTML = '<div style="text-align:center;padding:60px 24px;font-size:1.1rem;color:#2e7d32;font-weight:700;">✅ Tout est en stock !<br><span style="font-weight:400;font-size:.95rem;color:#757575">Rien à acheter cette semaine.</span></div>';
-    updateMobProgress(0, 0);
-    document.getElementById('mobile-overlay').classList.add('open');
-    document.documentElement.style.overflow = 'hidden';
-    return;
-  }
-
-  // Init take quantities
-  toBuy.forEach(item => {
+  // Init take quantities for all items
+  mobAllToBuy.forEach(item => {
     mobTakeQty[item.id] = Math.max(1, item.min - item.qty);
   });
 
-  body.innerHTML = toBuy.map(item => {
+  // Build store chips — only stores that have items to buy
+  const storesWithItems = [...new Set(
+    mobAllToBuy.flatMap(i => (i.stores && i.stores.length) ? i.stores : [])
+  )].sort();
+
+  const bar = document.getElementById('mob-store-bar');
+  if (storesWithItems.length > 0) {
+    bar.style.display = '';
+    bar.innerHTML = '<button class="mob-store-chip active" id="mob-chip-tous" onclick="mobFilterStore(\'tous\')">🛒 Tous</button>'
+      + storesWithItems.map(s =>
+          '<button class="mob-store-chip" id="mob-chip-' + s.replace(/\W/g,'_') + '" onclick="mobFilterStore(\'' + s.replace(/'/g,"\\'") + '\')">' + s + '</button>'
+        ).join('');
+  } else {
+    bar.style.display = 'none';
+  }
+
+  renderMobList();
+  document.getElementById('mobile-overlay').classList.add('open');
+  document.documentElement.style.overflow = 'hidden';
+}
+
+function mobFilterStore(store) {
+  mobActiveStore = store;
+  // Update chip styles
+  document.querySelectorAll('.mob-store-chip').forEach(c => c.classList.remove('active'));
+  const key = store === 'tous' ? 'tous' : store.replace(/\W/g,'_');
+  const chip = document.getElementById('mob-chip-' + key);
+  if (chip) chip.classList.add('active');
+  renderMobList();
+}
+
+function renderMobList() {
+  const filtered = mobActiveStore === 'tous'
+    ? mobAllToBuy
+    : mobAllToBuy.filter(i => (i.stores || []).includes(mobActiveStore));
+
+  const body = document.getElementById('mob-body');
+
+  if (filtered.length === 0) {
+    body.innerHTML = '<div style="text-align:center;padding:60px 24px;font-size:1.05rem;color:#2e7d32;font-weight:700;">✅ Tout est en stock ici !<br><span style="font-weight:400;font-size:.9rem;color:#757575">Rien à acheter dans ce magasin.</span></div>';
+    updateMobProgress(0, 0);
+    return;
+  }
+
+  body.innerHTML = filtered.map(item => {
+    const checked = mobChecked[item.id] || false;
     const sub = [item.unit, item.cat].filter(Boolean).join(' · ');
     const storesBadges = (item.stores && item.stores.length)
       ? item.stores.map(s => '<span style="background:#e3f2fd;color:#1565c0;border-radius:20px;padding:2px 8px;font-size:.72rem;font-weight:600;margin-right:3px;">🏪 ' + s + '</span>').join('')
       : '';
-    return '<div class="mob-item" id="mobrow-' + item.id + '" data-id="' + item.id + '">'
+    return '<div class="mob-item' + (checked ? ' checked' : '') + '" id="mobrow-' + item.id + '" data-id="' + item.id + '">'
       + '<div class="mob-check-area" onclick="mobToggle(\'' + item.id + '\')">'
-      +   '<div class="mob-checkbox" id="mobchk-' + item.id + '"></div>'
+      +   '<div class="mob-checkbox" id="mobchk-' + item.id + '">' + (checked ? '✓' : '') + '</div>'
       + '</div>'
       + '<div class="mob-item-label" onclick="mobToggle(\'' + item.id + '\')">'
       +   '<div class="mob-item-name">' + item.name + '</div>'
-      +   '<div class="mob-item-sub">' + (sub || '') + (storesBadges ? (sub ? ' &nbsp;' : '') + storesBadges : '') + '</div>'
+      +   '<div class="mob-item-sub">' + (sub || '') + (storesBadges && mobActiveStore === 'tous' ? (sub ? ' &nbsp;' : '') + storesBadges : '') + '</div>'
       + '</div>'
       + '<div class="mob-qty-ctrl">'
       +   '<button class="mob-qty-btn" onclick="mobAdjustQty(\'' + item.id + '\',-1)">−</button>'
-      +   '<span class="mob-qty-num" id="mobqty-' + item.id + '">' + mobTakeQty[item.id] + '</span>'
+      +   '<span class="mob-qty-num" id="mobqty-' + item.id + '">' + (mobTakeQty[item.id] || 1) + '</span>'
       +   '<button class="mob-qty-btn" onclick="mobAdjustQty(\'' + item.id + '\',1)">+</button>'
       + '</div>'
       + '</div>';
   }).join('');
 
-  updateMobProgress(toBuy.length, 0);
-  document.getElementById('mobile-overlay').classList.add('open');
-  document.documentElement.style.overflow = 'hidden';
+  const done = filtered.filter(i => mobChecked[i.id]).length;
+  updateMobProgress(filtered.length, done);
 }
 
 function mobAdjustQty(itemId, delta) {
@@ -746,9 +802,12 @@ function mobToggle(itemId) {
     save();
   }
 
-  const total    = document.querySelectorAll('#mob-body [data-id]').length;
-  const doneUniq = Object.values(mobChecked).filter(Boolean).length;
-  updateMobProgress(total, doneUniq);
+  // Refresh progress for current filter
+  const filtered = mobActiveStore === 'tous'
+    ? mobAllToBuy
+    : mobAllToBuy.filter(i => (i.stores || []).includes(mobActiveStore));
+  const done = filtered.filter(i => mobChecked[i.id]).length;
+  updateMobProgress(filtered.length, done);
 }
 
 function updateMobProgress(total, done = 0) {
