@@ -909,7 +909,7 @@ function renderMobList() {
     return '<div onclick="mobToggleCat(\'' + catKey + '\')" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:' + (allDone ? '#2e7d32' : '#555') + ';background:' + (allDone ? '#f1f8e9' : '#f0f0f0') + ';border-bottom:1px solid #ddd;cursor:pointer;user-select:none;">'
       + '<span>' + (CATEGORY_ICONS[cat] || '📦') + ' ' + cat + '</span>'
       + badge
-      + '<span style="font-size:.9rem;color:#aaa;margin-left:4px;">' + (collapsed ? '▶' : '▼') + '</span>'
+      + '<span id="mobcatarrow-' + catKey + '" style="font-size:.9rem;color:#aaa;margin-left:4px;">' + (collapsed ? '▶' : '▼') + '</span>'
       + '</div>'
       + '<div id="mobcat-' + catKey + '" style="' + (collapsed ? 'display:none;' : '') + '">'
       + itemsHtml
@@ -924,8 +924,8 @@ function mobToggleCat(catKey) {
   mobCollapsed[catKey] = !mobCollapsed[catKey];
   const el = document.getElementById('mobcat-' + catKey);
   if (el) el.style.display = mobCollapsed[catKey] ? 'none' : '';
-  // Re-render just the header arrow/badge — easier to re-render full list
-  renderMobList();
+  const arrow = document.getElementById('mobcatarrow-' + catKey);
+  if (arrow) arrow.textContent = mobCollapsed[catKey] ? '▶' : '▼';
 }
 
 function mobAdjustQty(itemId, delta) {
