@@ -46,10 +46,11 @@
        ══════════════════════════════════════════ */
     @media (max-width: 600px) {
       /* Header */
-      header { padding: 12px 14px; flex-wrap: wrap; gap: 8px; }
+      header { padding: 12px 14px; flex-wrap: wrap; gap: 8px; position: relative; }
       header h1 { font-size: 1.1rem; }
       .header-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
       .header-actions .btn { text-align: center; padding: 10px 8px; font-size: .82rem; }
+      #sync-status { position: absolute; top: 12px; right: 14px; font-size: .75rem; }
 
       /* Container */
       .container { padding: 14px 10px; }
