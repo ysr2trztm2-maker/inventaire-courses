@@ -231,10 +231,13 @@
 
     /* ── Mode courses (iPhone) ── */
     #mobile-overlay {
-      display: none; position: fixed; inset: 0; background: #f0f4f0; z-index: 500;
-      flex-direction: column; overflow: hidden;
+      display: none; position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      width: 100%; height: 100%;
+      background: #f0f4f0; z-index: 500;
+      -webkit-flex-direction: column; flex-direction: column; overflow: hidden;
     }
-    #mobile-overlay.open { display: flex; }
+    #mobile-overlay.open { display: -webkit-flex; display: flex; }
     .mob-header {
       background: var(--primary); color: #fff; padding: 14px 16px;
       display: flex; align-items: center; gap: 12px; flex-shrink: 0;
