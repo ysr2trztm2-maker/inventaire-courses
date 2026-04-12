@@ -68,17 +68,20 @@
       /* Category title */
       .category-title { font-size: .8rem; }
 
-      /* Item cards — plus grands, plus tactiles */
-      .item-card { padding: 14px 12px; gap: 10px; border-radius: 10px; }
+      /* Item cards — 2 lignes sur mobile */
+      .item-card { padding: 10px 12px; gap: 6px; border-radius: 10px; flex-wrap: wrap; }
+      .item-info { flex: 1 1 calc(100% - 80px); min-width: 0; }
       .item-name { font-size: 1rem; }
       .item-meta { font-size: .8rem; gap: 5px; }
+      .item-actions { flex: 0 0 auto; align-self: flex-start; }
+
+      /* Ligne 2 : −/qty/+ à gauche, badge à droite */
+      .qty-control { flex: 1 1 auto; }
+      .status-badge { flex: 0 0 auto; font-size: .72rem; padding: 4px 10px; }
 
       /* Qty buttons — 44px touch target */
       .qty-btn { width: 38px; height: 38px; font-size: 1.2rem; border-radius: 8px; }
       .qty-val  { font-size: 1.15rem; min-width: 32px; }
-
-      /* Status badge — raccourci */
-      .status-badge { display: none; }
 
       /* Edit/delete icons — plus grands */
       .icon-btn { font-size: 1.2rem; padding: 6px; }
