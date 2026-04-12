@@ -359,14 +359,17 @@
     <div class="form-row">
       <label>Catégorie</label>
       <select id="f-cat">
+        <option value="Fruits & légumes">🥦 Fruits &amp; légumes</option>
+        <option value="Protéines animales">🥩 Protéines animales</option>
         <option value="Produits laitiers">🥛 Produits laitiers</option>
-        <option value="Fruits & légumes">🥦 Fruits & légumes</option>
-        <option value="Viandes & poissons">🥩 Viandes & poissons</option>
-        <option value="Boulangerie">🍞 Boulangerie</option>
-        <option value="Épicerie">🛒 Épicerie</option>
-        <option value="Surgelés">🧊 Surgelés</option>
+        <option value="Féculents & céréales">🌾 Féculents &amp; céréales</option>
+        <option value="Conserves & bocaux">🥫 Conserves &amp; bocaux</option>
+        <option value="Épicerie salée">🧂 Épicerie salée</option>
+        <option value="Épicerie sucrée">🍯 Épicerie sucrée</option>
         <option value="Boissons">🥤 Boissons</option>
-        <option value="Hygiène & entretien">🧴 Hygiène & entretien</option>
+        <option value="Hygiène personnelle">🧴 Hygiène personnelle</option>
+        <option value="Entretien maison">🧹 Entretien maison</option>
+        <option value="Produits jetables">🗑️ Produits jetables</option>
         <option value="Autre">📦 Autre</option>
       </select>
     </div>
@@ -421,21 +424,24 @@
 
 <script>
 // ── Data ──────────────────────────────────────────────────────────────────
-const STORE_KEY = 'inventaire_v2';
+const STORE_KEY = 'inventaire_v3';
 let items = [];
 let editId = null;
 let modalStores = [];      // stores being edited in the modal
 
 const CATEGORY_ICONS = {
-  'Produits laitiers':   '🥛',
-  'Fruits & légumes':    '🥦',
-  'Viandes & poissons':  '🥩',
-  'Boulangerie':         '🍞',
-  'Épicerie':            '🛒',
-  'Surgelés':            '🧊',
-  'Boissons':            '🥤',
-  'Hygiène & entretien': '🧴',
-  'Autre':               '📦',
+  'Fruits & légumes':      '🥦',
+  'Protéines animales':    '🥩',
+  'Produits laitiers':     '🥛',
+  'Féculents & céréales':  '🌾',
+  'Conserves & bocaux':    '🥫',
+  'Épicerie salée':        '🧂',
+  'Épicerie sucrée':       '🍯',
+  'Boissons':              '🥤',
+  'Hygiène personnelle':   '🧴',
+  'Entretien maison':      '🧹',
+  'Produits jetables':     '🗑️',
+  'Autre':                 '📦',
 };
 
 function load() {
@@ -473,27 +479,109 @@ function allStores() {
 // ── Defaults ─────────────────────────────────────────────────────────────
 function getDefaults() {
   return [
-    { id: uid(), name: 'Lait 2%',              cat: 'Produits laitiers',   qty: 1, min: 2, unit: 'litres',     stores: [] },
-    { id: uid(), name: 'Yogourt grec',          cat: 'Produits laitiers',   qty: 3, min: 4, unit: 'unités',     stores: [] },
-    { id: uid(), name: 'Beurre',                cat: 'Produits laitiers',   qty: 1, min: 1, unit: 'bloc',       stores: [] },
-    { id: uid(), name: 'Fromage cheddar',       cat: 'Produits laitiers',   qty: 0, min: 1, unit: 'bloc',       stores: [] },
-    { id: uid(), name: 'Oeufs',                 cat: 'Produits laitiers',   qty: 6, min: 12, unit: 'unités',    stores: [] },
-    { id: uid(), name: 'Pommes',                cat: 'Fruits & légumes',    qty: 3, min: 6, unit: 'unités',     stores: [] },
-    { id: uid(), name: 'Bananes',               cat: 'Fruits & légumes',    qty: 0, min: 5, unit: 'unités',     stores: [] },
-    { id: uid(), name: 'Carottes',              cat: 'Fruits & légumes',    qty: 1, min: 1, unit: 'sac',        stores: [] },
-    { id: uid(), name: 'Épinards',              cat: 'Fruits & légumes',    qty: 0, min: 1, unit: 'sac',        stores: [] },
-    { id: uid(), name: 'Tomates',               cat: 'Fruits & légumes',    qty: 2, min: 4, unit: 'unités',     stores: [] },
-    { id: uid(), name: 'Poulet (poitrines)',    cat: 'Viandes & poissons',  qty: 0, min: 2, unit: 'paquets',    stores: [] },
-    { id: uid(), name: 'Boeuf haché',           cat: 'Viandes & poissons',  qty: 0, min: 1, unit: 'kg',         stores: [] },
-    { id: uid(), name: 'Pain de mie',           cat: 'Boulangerie',         qty: 0, min: 1, unit: 'miche',      stores: [] },
-    { id: uid(), name: 'Pâtes spaghetti',       cat: 'Épicerie',            qty: 1, min: 2, unit: 'boîtes',     stores: [] },
-    { id: uid(), name: 'Riz',                   cat: 'Épicerie',            qty: 500, min: 500, unit: 'g',      stores: [] },
-    { id: uid(), name: 'Sauce tomate',          cat: 'Épicerie',            qty: 0, min: 2, unit: 'boîtes',     stores: [] },
-    { id: uid(), name: "Huile d'olive",         cat: 'Épicerie',            qty: 1, min: 1, unit: 'bouteille',  stores: [] },
-    { id: uid(), name: "Jus d'orange",          cat: 'Boissons',            qty: 0, min: 1, unit: 'litre',      stores: [] },
-    { id: uid(), name: 'Eau (format familial)', cat: 'Boissons',            qty: 2, min: 4, unit: 'bouteilles', stores: [] },
-    { id: uid(), name: 'Savon vaisselle',       cat: 'Hygiène & entretien', qty: 1, min: 1, unit: 'bouteille',  stores: [] },
-    { id: uid(), name: 'Papier hygiénique',     cat: 'Hygiène & entretien', qty: 4, min: 6, unit: 'rouleaux',   stores: [] },
+    // Fruits & légumes
+    { id: uid(), name: 'Pomme',                       cat: 'Fruits & légumes',   qty: 0, min: 1, unit: 'unités',    stores: [] },
+    { id: uid(), name: 'Banane',                      cat: 'Fruits & légumes',   qty: 0, min: 1, unit: 'unités',    stores: [] },
+    { id: uid(), name: 'Fruits rouges surgelés',      cat: 'Fruits & légumes',   qty: 0, min: 1, unit: 'sachet',    stores: [] },
+    { id: uid(), name: 'Fraises surgelées',           cat: 'Fruits & légumes',   qty: 0, min: 1, unit: 'sachet',    stores: [] },
+    { id: uid(), name: 'Mangue surgelée',             cat: 'Fruits & légumes',   qty: 0, min: 1, unit: 'sachet',    stores: [] },
+    { id: uid(), name: 'Fruits exotiques surgelés',   cat: 'Fruits & légumes',   qty: 0, min: 1, unit: 'sachet',    stores: [] },
+    { id: uid(), name: 'Salade',                      cat: 'Fruits & légumes',   qty: 0, min: 1, unit: 'unité',     stores: [] },
+    { id: uid(), name: 'Tomate',                      cat: 'Fruits & légumes',   qty: 0, min: 1, unit: 'unités',    stores: [] },
+    { id: uid(), name: 'Concombre',                   cat: 'Fruits & légumes',   qty: 0, min: 1, unit: 'unité',     stores: [] },
+    { id: uid(), name: 'Carotte',                     cat: 'Fruits & légumes',   qty: 0, min: 1, unit: 'unités',    stores: [] },
+    { id: uid(), name: 'Aubergine',                   cat: 'Fruits & légumes',   qty: 0, min: 1, unit: 'unité',     stores: [] },
+    { id: uid(), name: 'Poivron',                     cat: 'Fruits & légumes',   qty: 0, min: 1, unit: 'unités',    stores: [] },
+    { id: uid(), name: 'Courgette',                   cat: 'Fruits & légumes',   qty: 0, min: 1, unit: 'unité',     stores: [] },
+    { id: uid(), name: 'Patate douce',                cat: 'Fruits & légumes',   qty: 0, min: 1, unit: 'unités',    stores: [] },
+    { id: uid(), name: 'Pomme de terre',              cat: 'Fruits & légumes',   qty: 0, min: 1, unit: 'kg',        stores: [] },
+    { id: uid(), name: 'Brocolis et choux surgelés',  cat: 'Fruits & légumes',   qty: 0, min: 1, unit: 'sachet',    stores: [] },
+    { id: uid(), name: 'Épinard surgelé',             cat: 'Fruits & légumes',   qty: 0, min: 1, unit: 'sachet',    stores: [] },
+    // Protéines animales
+    { id: uid(), name: 'Filet de poulet',             cat: 'Protéines animales', qty: 0, min: 1, unit: 'kg',        stores: [] },
+    { id: uid(), name: 'Ailes de poulet',             cat: 'Protéines animales', qty: 0, min: 1, unit: 'kg',        stores: [] },
+    { id: uid(), name: 'Cuisse de poulet',            cat: 'Protéines animales', qty: 0, min: 1, unit: 'kg',        stores: [] },
+    { id: uid(), name: 'Entrecôte',                   cat: 'Protéines animales', qty: 0, min: 1, unit: 'kg',        stores: [] },
+    { id: uid(), name: 'Faux-filet',                  cat: 'Protéines animales', qty: 0, min: 1, unit: 'kg',        stores: [] },
+    { id: uid(), name: 'Poitrine de porc',            cat: 'Protéines animales', qty: 0, min: 1, unit: 'kg',        stores: [] },
+    { id: uid(), name: 'Lardons',                     cat: 'Protéines animales', qty: 0, min: 1, unit: 'barquette', stores: [] },
+    { id: uid(), name: 'Saumon',                      cat: 'Protéines animales', qty: 0, min: 1, unit: 'kg',        stores: [] },
+    { id: uid(), name: 'Crevette',                    cat: 'Protéines animales', qty: 0, min: 1, unit: 'kg',        stores: [] },
+    { id: uid(), name: 'Oeufs',                       cat: 'Protéines animales', qty: 0, min: 6, unit: 'unités',    stores: [] },
+    // Produits laitiers
+    { id: uid(), name: 'Yaourt grec',                 cat: 'Produits laitiers',  qty: 0, min: 2, unit: 'unités',    stores: [] },
+    { id: uid(), name: 'Fromage blanc',               cat: 'Produits laitiers',  qty: 0, min: 1, unit: 'pot',       stores: [] },
+    { id: uid(), name: 'Beurre',                      cat: 'Produits laitiers',  qty: 0, min: 1, unit: 'unité',     stores: [] },
+    { id: uid(), name: 'Crème liquide semi épaisse',  cat: 'Produits laitiers',  qty: 0, min: 1, unit: 'bouteille', stores: [] },
+    // Féculents & céréales
+    { id: uid(), name: 'Pain complet',                cat: 'Féculents & céréales', qty: 0, min: 1, unit: 'unité',   stores: [] },
+    { id: uid(), name: 'Pâte complète',               cat: 'Féculents & céréales', qty: 0, min: 1, unit: 'paquet',  stores: [] },
+    { id: uid(), name: 'Spaghettis complets',         cat: 'Féculents & céréales', qty: 0, min: 1, unit: 'paquet',  stores: [] },
+    { id: uid(), name: 'Riz parfumé',                 cat: 'Féculents & céréales', qty: 0, min: 1, unit: 'kg',      stores: [] },
+    { id: uid(), name: 'Riz 3 couleurs',              cat: 'Féculents & céréales', qty: 0, min: 1, unit: 'kg',      stores: [] },
+    { id: uid(), name: 'Riz basmati',                 cat: 'Féculents & céréales', qty: 0, min: 1, unit: 'kg',      stores: [] },
+    { id: uid(), name: "Flocons d'avoine",            cat: 'Féculents & céréales', qty: 0, min: 1, unit: 'paquet',  stores: [] },
+    // Conserves & bocaux
+    { id: uid(), name: 'Lentilles de corail',         cat: 'Conserves & bocaux', qty: 0, min: 1, unit: 'boîte',    stores: [] },
+    { id: uid(), name: 'Thon en conserves',           cat: 'Conserves & bocaux', qty: 0, min: 2, unit: 'boîtes',   stores: [] },
+    { id: uid(), name: "Sardine à l'huile d'olive",   cat: 'Conserves & bocaux', qty: 0, min: 1, unit: 'boîte',    stores: [] },
+    { id: uid(), name: 'Sardine au piment',           cat: 'Conserves & bocaux', qty: 0, min: 1, unit: 'boîte',    stores: [] },
+    { id: uid(), name: 'Sauce tomate',                cat: 'Conserves & bocaux', qty: 0, min: 2, unit: 'boîtes',   stores: [] },
+    // Épicerie salée
+    { id: uid(), name: 'Sel',                         cat: 'Épicerie salée',     qty: 0, min: 1, unit: 'paquet',   stores: [] },
+    { id: uid(), name: 'Poivre',                      cat: 'Épicerie salée',     qty: 0, min: 1, unit: 'pot',      stores: [] },
+    { id: uid(), name: 'Paprika doux',                cat: 'Épicerie salée',     qty: 0, min: 1, unit: 'pot',      stores: [] },
+    { id: uid(), name: 'Origan',                      cat: 'Épicerie salée',     qty: 0, min: 1, unit: 'pot',      stores: [] },
+    { id: uid(), name: 'Ail en poudre',               cat: 'Épicerie salée',     qty: 0, min: 1, unit: 'pot',      stores: [] },
+    { id: uid(), name: 'Herbes de Provence',          cat: 'Épicerie salée',     qty: 0, min: 1, unit: 'pot',      stores: [] },
+    { id: uid(), name: 'Thym',                        cat: 'Épicerie salée',     qty: 0, min: 1, unit: 'pot',      stores: [] },
+    { id: uid(), name: "Huile d'olive",               cat: 'Épicerie salée',     qty: 0, min: 1, unit: 'bouteille',stores: [] },
+    { id: uid(), name: 'Huile de tournesol',          cat: 'Épicerie salée',     qty: 0, min: 1, unit: 'bouteille',stores: [] },
+    { id: uid(), name: 'Vinaigre',                    cat: 'Épicerie salée',     qty: 0, min: 1, unit: 'bouteille',stores: [] },
+    { id: uid(), name: 'Vinaigre de cidre de pomme',  cat: 'Épicerie salée',     qty: 0, min: 1, unit: 'bouteille',stores: [] },
+    { id: uid(), name: 'Moutarde',                    cat: 'Épicerie salée',     qty: 0, min: 1, unit: 'pot',      stores: [] },
+    { id: uid(), name: 'Harissa',                     cat: 'Épicerie salée',     qty: 0, min: 1, unit: 'pot',      stores: [] },
+    { id: uid(), name: 'Mayonnaise',                  cat: 'Épicerie salée',     qty: 0, min: 1, unit: 'pot',      stores: [] },
+    { id: uid(), name: 'Ketchup',                     cat: 'Épicerie salée',     qty: 0, min: 1, unit: 'bouteille',stores: [] },
+    { id: uid(), name: 'Sauce burger',                cat: 'Épicerie salée',     qty: 0, min: 1, unit: 'bouteille',stores: [] },
+    { id: uid(), name: 'Sauce soja',                  cat: 'Épicerie salée',     qty: 0, min: 1, unit: 'bouteille',stores: [] },
+    // Épicerie sucrée
+    { id: uid(), name: 'Sucre',                       cat: 'Épicerie sucrée',    qty: 0, min: 1, unit: 'kg',       stores: [] },
+    { id: uid(), name: 'Chocolat',                    cat: 'Épicerie sucrée',    qty: 0, min: 1, unit: 'tablette', stores: [] },
+    { id: uid(), name: 'Miel',                        cat: 'Épicerie sucrée',    qty: 0, min: 1, unit: 'pot',      stores: [] },
+    { id: uid(), name: 'Beurre de cacahuète',         cat: 'Épicerie sucrée',    qty: 0, min: 1, unit: 'pot',      stores: [] },
+    // Boissons
+    { id: uid(), name: 'Eau grande bouteille',        cat: 'Boissons',           qty: 0, min: 2, unit: 'bouteilles',stores: [] },
+    { id: uid(), name: 'Eau petite bouteille',        cat: 'Boissons',           qty: 0, min: 6, unit: 'bouteilles',stores: [] },
+    { id: uid(), name: 'Coca Zéro canette',           cat: 'Boissons',           qty: 0, min: 6, unit: 'canettes', stores: [] },
+    { id: uid(), name: 'Café',                        cat: 'Boissons',           qty: 0, min: 1, unit: 'paquet',   stores: [] },
+    { id: uid(), name: 'Thé',                         cat: 'Boissons',           qty: 0, min: 1, unit: 'boîte',    stores: [] },
+    // Hygiène personnelle
+    { id: uid(), name: 'Gel douche',                  cat: 'Hygiène personnelle',qty: 0, min: 1, unit: 'flacon',   stores: [] },
+    { id: uid(), name: 'Shampoing',                   cat: 'Hygiène personnelle',qty: 0, min: 1, unit: 'flacon',   stores: [] },
+    { id: uid(), name: 'Dentifrice',                  cat: 'Hygiène personnelle',qty: 0, min: 1, unit: 'tube',     stores: [] },
+    { id: uid(), name: 'Déodorant',                   cat: 'Hygiène personnelle',qty: 0, min: 1, unit: 'unité',    stores: [] },
+    { id: uid(), name: 'Rasoir',                      cat: 'Hygiène personnelle',qty: 0, min: 1, unit: 'unité',    stores: [] },
+    { id: uid(), name: 'Coton tige',                  cat: 'Hygiène personnelle',qty: 0, min: 1, unit: 'boîte',    stores: [] },
+    { id: uid(), name: 'Coton',                       cat: 'Hygiène personnelle',qty: 0, min: 1, unit: 'sachet',   stores: [] },
+    { id: uid(), name: 'Fil dentaire',                cat: 'Hygiène personnelle',qty: 0, min: 1, unit: 'unité',    stores: [] },
+    // Entretien maison
+    { id: uid(), name: 'Lessive',                     cat: 'Entretien maison',   qty: 0, min: 1, unit: 'kg',       stores: [] },
+    { id: uid(), name: 'Adoucissant',                 cat: 'Entretien maison',   qty: 0, min: 1, unit: 'bouteille',stores: [] },
+    { id: uid(), name: 'Stop color',                  cat: 'Entretien maison',   qty: 0, min: 1, unit: 'boîte',    stores: [] },
+    { id: uid(), name: 'K2R',                         cat: 'Entretien maison',   qty: 0, min: 1, unit: 'unité',    stores: [] },
+    { id: uid(), name: 'Liquide vaisselle',           cat: 'Entretien maison',   qty: 0, min: 1, unit: 'bouteille',stores: [] },
+    { id: uid(), name: 'Éponge',                      cat: 'Entretien maison',   qty: 0, min: 2, unit: 'unités',   stores: [] },
+    { id: uid(), name: 'Javel WC',                    cat: 'Entretien maison',   qty: 0, min: 1, unit: 'bouteille',stores: [] },
+    // Produits jetables
+    { id: uid(), name: 'Essuie-tout',                 cat: 'Produits jetables',  qty: 0, min: 2, unit: 'rouleaux', stores: [] },
+    { id: uid(), name: 'Étui mouchoir',               cat: 'Produits jetables',  qty: 0, min: 2, unit: 'étuis',    stores: [] },
+    { id: uid(), name: 'Sacs poubelle 50L',           cat: 'Produits jetables',  qty: 0, min: 1, unit: 'rouleau',  stores: [] },
+    { id: uid(), name: 'Sac poubelle 5L',             cat: 'Produits jetables',  qty: 0, min: 1, unit: 'rouleau',  stores: [] },
+    { id: uid(), name: 'Sacs alimentaires',           cat: 'Produits jetables',  qty: 0, min: 1, unit: 'boîte',    stores: [] },
+    { id: uid(), name: 'Film alimentaire',            cat: 'Produits jetables',  qty: 0, min: 1, unit: 'rouleau',  stores: [] },
+    { id: uid(), name: 'Aluminium',                   cat: 'Produits jetables',  qty: 0, min: 1, unit: 'rouleau',  stores: [] },
+    { id: uid(), name: 'Papier cuisson',              cat: 'Produits jetables',  qty: 0, min: 1, unit: 'rouleau',  stores: [] },
   ];
 }
 
