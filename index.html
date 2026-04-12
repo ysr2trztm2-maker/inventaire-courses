@@ -185,6 +185,8 @@
     .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
     .btn-ghost { background: none; border: 1px solid var(--border); color: var(--text); }
     .btn-ghost:hover { background: var(--bg); }
+    .btn-danger { background: none; border: 1px solid var(--danger); color: var(--danger); }
+    .btn-danger:hover { background: #fdecea; }
 
     /* ── Tag input (stores) ── */
     .tag-input-wrap {
@@ -397,6 +399,7 @@
       <div class="tag-hint">Appuie sur Entrée ou , pour ajouter · Clic × pour retirer</div>
     </div>
     <div class="modal-actions">
+      <button class="btn btn-danger" id="btn-delete" onclick="deleteCurrentItem()" style="display:none;margin-right:auto;">🗑️ Supprimer</button>
       <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
       <button class="btn btn-accent" onclick="saveItem()">Enregistrer</button>
     </div>
@@ -664,7 +667,6 @@ function itemCard(item) {
       <span class="status-badge badge-${st}">${badgeText}</span>
       <div class="item-actions">
         <button class="icon-btn" title="Modifier" onclick="openModal('${item.id}')">✏️</button>
-        <button class="icon-btn" title="Supprimer" onclick="deleteItem('${item.id}')">🗑️</button>
       </div>
     </div>`;
 }
@@ -690,10 +692,20 @@ function deleteItem(id) {
   toast('Article supprimé');
 }
 
+function deleteCurrentItem() {
+  if (!editId) return;
+  if (!confirm('Supprimer cet article?')) return;
+  items = items.filter(i=>i.id!==editId);
+  save(); render();
+  closeModal();
+  toast('Article supprimé');
+}
+
 // ── Modal ─────────────────────────────────────────────────────────────────
 function openModal(id = null) {
   editId = id;
   document.getElementById('modal-title').textContent = id ? "Modifier l'article" : 'Ajouter un article';
+  document.getElementById('btn-delete').style.display = id ? '' : 'none';
   if (id) {
     const item = items.find(i=>i.id===id);
     document.getElementById('f-name').value = item.name;
