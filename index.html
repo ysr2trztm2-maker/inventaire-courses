@@ -226,7 +226,14 @@
     .mob-close {
       background: rgba(255,255,255,.2); border: none; color: #fff;
       border-radius: 8px; padding: 8px 14px; font-size: .9rem; font-weight: 700; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
     }
+    .mob-btn-validate {
+      background: #fff; color: var(--primary); border: none;
+      border-radius: 8px; padding: 8px 14px; font-size: .9rem; font-weight: 700;
+      cursor: pointer; -webkit-tap-highlight-color: transparent; white-space: nowrap;
+    }
+    .mob-btn-validate:active { filter: brightness(.9); }
     /* Store filter bar */
     .mob-store-bar {
       background: #fff; border-bottom: 1px solid var(--border);
@@ -296,22 +303,6 @@
     .mob-done-banner {
       display: none; text-align: center; padding: 40px 24px;
       font-size: 1.2rem; font-weight: 700; color: var(--primary);
-    }
-    /* Validate footer */
-    .mob-footer {
-      background: #fff; border-top: 1px solid var(--border);
-      padding: 12px 16px; flex-shrink: 0; display: flex; gap: 10px;
-    }
-    .mob-btn-validate {
-      flex: 1; background: var(--primary); color: #fff; border: none;
-      border-radius: 10px; padding: 14px; font-size: 1rem; font-weight: 700;
-      cursor: pointer; -webkit-tap-highlight-color: transparent;
-    }
-    .mob-btn-validate:active { filter: brightness(.9); }
-    .mob-btn-cancel {
-      background: none; border: 2px solid var(--border); color: var(--muted);
-      border-radius: 10px; padding: 14px 18px; font-size: .9rem; font-weight: 600;
-      cursor: pointer; -webkit-tap-highlight-color: transparent;
     }
 
     /* ── Toast ── */
@@ -412,7 +403,8 @@
 <!-- Mode courses iPhone -->
 <div id="mobile-overlay">
   <div class="mob-header">
-    <h2>🛒 Courses du lundi</h2>
+    <h2>🛒 Courses</h2>
+    <button class="mob-btn-validate" onclick="validateMobile()">✓ Terminer</button>
     <button class="mob-close" onclick="closeMobile()">✕ Fermer</button>
   </div>
   <div class="mob-store-bar" id="mob-store-bar"></div>
@@ -422,10 +414,6 @@
   </div>
   <div class="mob-body" id="mob-body">
     <div class="mob-done-banner" id="mob-done-banner">✅ Tout est coché !<br>Bonne semaine !</div>
-  </div>
-  <div class="mob-footer">
-    <button class="mob-btn-cancel" onclick="closeMobile()">Annuler</button>
-    <button class="mob-btn-validate" onclick="validateMobile()">✓ Terminer les courses</button>
   </div>
 </div>
 
@@ -856,12 +844,12 @@ function updateMobProgress(total, done = 0) {
 }
 
 function validateMobile() {
-  // Appliquer les quantités seulement pour les articles cochés
   const checkedIds = Object.keys(mobChecked).filter(id => mobChecked[id]);
   if (checkedIds.length === 0) {
     toast('Aucun article coché');
     return;
   }
+  if (!confirm('Terminer les courses ?\n\n' + checkedIds.length + ' article(s) seront ajoutés à l\'inventaire.')) return;
   checkedIds.forEach(id => {
     const item = items.find(i => i.id === id);
     if (item) item.qty = item.qty + (mobTakeQty[id] || 1);
@@ -875,7 +863,17 @@ function validateMobile() {
 }
 
 function closeMobile() {
-  // Ferme sans rien modifier
+  const checkedIds = Object.keys(mobChecked).filter(id => mobChecked[id]);
+  if (checkedIds.length > 0) {
+    const rep = confirm('Sauvegarder les coches avant de fermer ?');
+    if (rep) {
+      // Garde les coches dans localStorage, ferme sans toucher au stock
+      mobSaveState();
+    } else {
+      // Efface tout
+      mobClearState();
+    }
+  }
   document.getElementById('mobile-overlay').classList.remove('open');
   document.documentElement.style.overflow = '';
 }
