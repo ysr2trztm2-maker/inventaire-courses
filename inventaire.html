@@ -233,8 +233,8 @@
     #mobile-overlay {
       display: none; position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      width: 100%; height: 100%;
-      background: #f0f4f0; z-index: 500;
+      width: 100vw; height: 100vh;
+      background: #f0f4f0; z-index: 9999;
       -webkit-flex-direction: column; flex-direction: column; overflow: hidden;
     }
     #mobile-overlay.open { display: -webkit-flex; display: flex; }
@@ -307,7 +307,8 @@
   </div>
   <div class="header-actions">
     <button class="btn btn-primary" onclick="openModal()">+ Ajouter</button>
-    <button class="btn btn-accent" onclick="generateList()">Générer la liste</button>
+    <button class="btn btn-accent" onclick="generateList()">Générer</button>
+    <button class="btn" style="background:#fff3e0;color:#e65100;font-weight:700;" onclick="openMobile()">📱 Courses</button>
   </div>
 </header>
 
@@ -803,9 +804,17 @@ function openMobile() {
   const toBuy = items.filter(i => getStatus(i) !== 'ok')
     .sort((a,b) => a.cat.localeCompare(b.cat) || a.name.localeCompare(b.name));
 
-  if (toBuy.length === 0) { toast('Rien à acheter cette semaine !'); return; }
-
   mobChecked = {};
+
+  const body = document.getElementById('mob-body');
+
+  if (toBuy.length === 0) {
+    body.innerHTML = '<div style="text-align:center;padding:60px 24px;font-size:1.1rem;color:#2e7d32;font-weight:700;">✅ Tout est en stock !<br><span style="font-weight:400;font-size:.95rem;color:#757575">Rien à acheter cette semaine.</span></div>';
+    updateMobProgress(0, 0);
+    document.getElementById('mobile-overlay').classList.add('open');
+    document.documentElement.style.overflow = 'hidden';
+    return;
+  }
 
   // Group by store
   const byStore = {};
@@ -817,31 +826,27 @@ function openMobile() {
   const storeOrder = Object.keys(byStore).sort((a,b) =>
     a==='—' ? 1 : b==='—' ? -1 : a.localeCompare(b));
 
-  const body = document.getElementById('mob-body');
   body.innerHTML = storeOrder.map(store => {
-    const header = `<div class="mob-store-header">🏪 ${store}</div>`;
+    const header = '<div class="mob-store-header">🏪 ' + store + '</div>';
     const rows = byStore[store].map(item => {
       const need = Math.max(1, item.min - item.qty);
       const sub  = [item.unit, item.cat].filter(Boolean).join(' · ');
-      return `
-        <div class="mob-item" id="mob-${item.id}-${store.replace(/\W/g,'_')}" data-id="${item.id}" onclick="mobToggle('${item.id}')">
-          <div class="mob-check-area"><div class="mob-checkbox" id="mobchk-${item.id}-${store.replace(/\W/g,'_')}"></div></div>
-          <div class="mob-item-label">
-            <div class="mob-item-name">${item.name}</div>
-            ${sub ? `<div class="mob-item-sub">${sub}</div>` : ''}
-          </div>
-          <div class="mob-item-qty">×${need}</div>
-        </div>`;
+      const sid  = store.replace(/\W/g,'_');
+      return '<div class="mob-item" data-id="' + item.id + '" onclick="mobToggle(\'' + item.id + '\')">'
+        + '<div class="mob-check-area"><div class="mob-checkbox" id="mobchk-' + item.id + '-' + sid + '"></div></div>'
+        + '<div class="mob-item-label">'
+        + '<div class="mob-item-name">' + item.name + '</div>'
+        + (sub ? '<div class="mob-item-sub">' + sub + '</div>' : '')
+        + '</div>'
+        + '<div class="mob-item-qty">×' + need + '</div>'
+        + '</div>';
     }).join('');
     return header + rows;
   }).join('');
 
-  body.appendChild(document.getElementById('mob-done-banner'));
-  document.getElementById('mob-done-banner').style.display = 'none';
-
-  updateMobProgress(toBuy.length);
+  updateMobProgress(toBuy.length, 0);
   document.getElementById('mobile-overlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
+  document.documentElement.style.overflow = 'hidden';
 }
 
 function mobToggle(itemId) {
@@ -882,8 +887,8 @@ function updateMobProgress(total, done = 0) {
 
 function closeMobile() {
   document.getElementById('mobile-overlay').classList.remove('open');
-  document.body.style.overflow = '';
-  render(); // refresh inventory with updated qtys
+  document.documentElement.style.overflow = '';
+  render();
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────
