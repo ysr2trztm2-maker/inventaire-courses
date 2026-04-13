@@ -360,6 +360,7 @@
       <option value="ok">En stock</option>
     </select>
     <select id="filter-store" onchange="render()"><option value="">Tous les magasins</option></select>
+    <button class="btn" style="background:#e8f5e9;color:#2e7d32;font-weight:700;" onclick="openBackup()">💾 Sauvegardes</button>
   </div>
   <div id="inventory-list"></div>
 </div>
@@ -438,6 +439,18 @@
 </div>
 
 <div id="toast"></div>
+
+<!-- Backup modal -->
+<div class="overlay" id="backup-overlay" onclick="if(event.target===this)closeBackup()">
+  <div class="modal">
+    <h3>💾 Sauvegardes</h3>
+    <div id="backup-list" style="max-height:300px;overflow-y:auto;margin-bottom:16px;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-accent" style="margin-right:auto;" onclick="createBackup()">+ Créer une sauvegarde</button>
+      <button class="btn btn-ghost" onclick="closeBackup()">Fermer</button>
+    </div>
+  </div>
+</div>
 
 <!-- Sync settings modal -->
 <div class="overlay" id="sync-overlay" onclick="if(event.target===this)closeSyncSettings()">
@@ -1135,6 +1148,68 @@ function closeMobile() {
   }
   document.getElementById('mobile-overlay').classList.remove('open');
   document.documentElement.style.overflow = '';
+}
+
+// ── Backups ───────────────────────────────────────────────────────────────
+const BACKUP_KEY = 'inventaire_backups';
+
+function getBackups() {
+  try { return JSON.parse(localStorage.getItem(BACKUP_KEY)) || []; } catch { return []; }
+}
+
+function createBackup() {
+  const backups = getBackups();
+  const now = new Date();
+  const label = now.toLocaleDateString('fr-FR') + ' ' + now.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+  backups.unshift({ label, date: now.toISOString(), data: JSON.parse(JSON.stringify(items)) });
+  if (backups.length > 10) backups.pop(); // max 10 sauvegardes
+  localStorage.setItem(BACKUP_KEY, JSON.stringify(backups));
+  renderBackupList();
+  toast('💾 Sauvegarde créée');
+}
+
+function restoreBackup(index) {
+  if (!confirm('Restaurer cette sauvegarde ? Les saisies en cours seront conservées dans une nouvelle sauvegarde.')) return;
+  createBackup(); // sauvegarde l'état actuel avant de restaurer
+  const backups = getBackups();
+  items = backups[index].data;
+  save(); render();
+  closeBackup();
+  toast('✅ Sauvegarde restaurée');
+}
+
+function deleteBackup(index) {
+  if (!confirm('Supprimer cette sauvegarde ?')) return;
+  const backups = getBackups();
+  backups.splice(index, 1);
+  localStorage.setItem(BACKUP_KEY, JSON.stringify(backups));
+  renderBackupList();
+}
+
+function renderBackupList() {
+  const backups = getBackups();
+  const el = document.getElementById('backup-list');
+  if (backups.length === 0) {
+    el.innerHTML = '<p style="color:#999;text-align:center;padding:20px;">Aucune sauvegarde</p>';
+    return;
+  }
+  el.innerHTML = backups.map((b, i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #eee;">
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:.9rem;">${b.label}</div>
+        <div style="font-size:.75rem;color:#999;">${b.data.length} articles</div>
+      </div>
+      <button class="btn btn-ghost" style="padding:6px 12px;font-size:.8rem;" onclick="restoreBackup(${i})">Restaurer</button>
+      <button class="icon-btn" onclick="deleteBackup(${i})">🗑️</button>
+    </div>`).join('');
+}
+
+function openBackup() {
+  renderBackupList();
+  document.getElementById('backup-overlay').classList.add('open');
+}
+function closeBackup() {
+  document.getElementById('backup-overlay').classList.remove('open');
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────
