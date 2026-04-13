@@ -396,7 +396,7 @@
         <input type="number" id="f-qty" min="0" value="0" />
       </div>
       <div class="form-row" style="margin-bottom:0">
-        <label>Seuil minimum</label>
+        <label>Seuil minimum <span style="font-weight:400;color:#aaa;">(0 = pas de seuil)</span></label>
         <input type="number" id="f-min" min="0" value="1" />
       </div>
     </div>
@@ -607,8 +607,9 @@ async function syncFromGist() {
 }
 
 function getStatus(item) {
+  if (item.min === 0) return 'ok'; // pas de seuil = toujours en stock
   if (item.qty <= 0) return 'low';
-  if (item.qty <= item.min) return 'mid';
+  if (item.qty < item.min) return 'mid';
   return 'ok';
 }
 
