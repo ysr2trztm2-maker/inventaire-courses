@@ -919,7 +919,7 @@ function saveItem() {
     name,
     cat:    document.getElementById('f-cat').value,
     qty:    parseInt(document.getElementById('f-qty').value) || 0,
-    min:    parseInt(document.getElementById('f-min').value) || 1,
+    min:    parseInt(document.getElementById('f-min').value) || 0,
     unit:   document.getElementById('f-unit').value.trim(),
     stores: [...modalStores],
   };
